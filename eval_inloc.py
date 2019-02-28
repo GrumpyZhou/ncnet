@@ -36,8 +36,8 @@ parser.add_argument('--n_panos', type=int, default=10)
 parser.add_argument('--softmax', type=str_to_bool, default=True)
 parser.add_argument('--matching_both_directions', type=str_to_bool, default=True)
 parser.add_argument('--flip_matching_direction', type=str_to_bool, default=False)
-parser.add_argument('--pano_path', type=str, default='datasets/inloc/pano/', help='path to InLoc panos - should contain CSE3,CSE4,CSE5,DUC1 and DUC2 folders')
-parser.add_argument('--query_path', type=str, default='datasets/inloc/query/iphone7/', help='path to InLoc queries')
+parser.add_argument('--pano_path', type=str, default='datasets/inloc/cutouts/', help='path to InLoc panos - should contain CSE3,CSE4,CSE5,DUC1 and DUC2 folders')
+parser.add_argument('--query_path', type=str, default='datasets/inloc/iphone7/', help='path to InLoc queries')
 
 args = parser.parse_args()
 
@@ -74,12 +74,13 @@ print('Output matches folder: '+output_folder)
 # Data preprocessing
 
 # Manually change image resolution for this test. On training, image_size=400 was used, with squared images
-scale_factor = 0.0625
+scale_factor = 0.0625 # Downsampling scale by the feature extraction, 1/16=0.0625
 
 imreadth = lambda x: torch.Tensor(sc.misc.imread(x).astype(np.float32)).transpose(1,2).transpose(0,1)
 normalize = lambda x: NormalizeImageDict(['im'])({'im':x})['im']
 
 # allow rectangular images. Does not modify aspect ratio.
+# Resize so the larger side is image_size while keeping the aspect ratio
 if k_size==1:
     resize = lambda x: nn.functional.upsample(Variable(x.unsqueeze(0).cuda(),volatile=True),
                 size=(int(x.shape[1]/(np.max(x.shape[1:])/image_size)),int(x.shape[2]/(np.max(x.shape[1:])/image_size))),mode='bilinear')
