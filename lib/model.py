@@ -14,7 +14,8 @@ from lib.conv4d import Conv4d
 def featureL2Norm(feature):
     epsilon = 1e-6
     norm = torch.pow(torch.sum(torch.pow(feature,2),1)+epsilon,0.5).unsqueeze(1).expand_as(feature)
-    return torch.div(feature,norm)
+    feat_norm = torch.div(feature,norm)
+    return feat_norm
 
 class FeatureExtraction(torch.nn.Module):
     def __init__(self, train_fe=False, feature_extraction_cnn='resnet101', feature_extraction_model_file='', normalization=True, last_layer='', use_cuda=True):
@@ -262,17 +263,20 @@ class ImMatchNet(nn.Module):
         # feature extraction
         feature_A = self.FeatureExtraction(tnf_batch['source_image'])
         feature_B = self.FeatureExtraction(tnf_batch['target_image'])
+
         if self.half_precision:
             feature_A=feature_A.half()
             feature_B=feature_B.half()
         # feature correlation
         corr4d = self.FeatureCorrelation(feature_A,feature_B)
+
         # do 4d maxpooling for relocalization
         if self.relocalization_k_size>1:
             corr4d,max_i,max_j,max_k,max_l=maxpool4d(corr4d,k_size=self.relocalization_k_size)
-        # run match processing model 
+
+        # run match processing model
         corr4d = MutualMatching(corr4d)
-        corr4d = self.NeighConsensus(corr4d)            
+        corr4d = self.NeighConsensus(corr4d)
         corr4d = MutualMatching(corr4d)
         
         if self.relocalization_k_size>1:
@@ -280,4 +284,34 @@ class ImMatchNet(nn.Module):
             return (corr4d,delta4d)
         else:
             return corr4d
+ 
+    def feat_forward(self, featA, featB, normalize=True): 
+        # feature normalization
+        if normalize:
+            feature_A = featureL2Norm(featA)
+            feature_B = featureL2Norm(featB)
+        else:
+            feature_A = featA
+            feature_B = featB
+        print('Feat size', feature_A.size(), feature_B.size())
+        if self.half_precision:
+            feature_A=feature_A.half()
+            feature_B=feature_B.half()
+        # feature correlation
+        corr4d = self.FeatureCorrelation(feature_A,feature_B)
 
+        # do 4d maxpooling for relocalization
+        if self.relocalization_k_size>1:
+            corr4d,max_i,max_j,max_k,max_l=maxpool4d(corr4d,k_size=self.relocalization_k_size)
+
+        # run match processing model
+        corr4d = MutualMatching(corr4d)
+        corr4d = self.NeighConsensus(corr4d)
+        corr4d = MutualMatching(corr4d)
+        
+        if self.relocalization_k_size>1:
+            delta4d=(max_i,max_j,max_k,max_l)
+            return (corr4d,delta4d)
+        else:
+            return corr4d
+        
