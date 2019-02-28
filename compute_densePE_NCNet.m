@@ -1,7 +1,7 @@
 % Evaluate NCNet matches on top of densePE shortlist
 
 % adjust path and experiment name
-inloc_demo_path = '/sequoia/data1/iroccosp/GIT/github/InLoc_demo_old/';
+inloc_demo_path = 'InLoc_demo';
 experiment = 'densePE_top100_shortlist_cvpr18_SZ_NEW_3200_K_2_BOTHDIRS_SOFTMAX_CHECKPOINT_ncnet_ivd';
 
 if exist('ncnet_path')==0
