@@ -17,10 +17,12 @@ def corr_to_matches(corr4d, delta4d=None, k_size=1, do_softmax=False, scale='cen
         XA,YA=np.meshgrid(np.linspace(-1,1,fs2*k_size),np.linspace(-1,1,fs1*k_size))
         XB,YB=np.meshgrid(np.linspace(-1,1,fs4*k_size),np.linspace(-1,1,fs3*k_size))
     elif scale=='positive':
+        # Upsampled resolution linear space
         XA,YA=np.meshgrid(np.linspace(0,1,fs2*k_size),np.linspace(0,1,fs1*k_size))
         XB,YB=np.meshgrid(np.linspace(0,1,fs4*k_size),np.linspace(0,1,fs3*k_size))
 
-    JA,IA=np.meshgrid(range(fs2),range(fs1))
+    # Index meshgrid for current resolution
+    JA,IA=np.meshgrid(range(fs2),range(fs1)) 
     JB,IB=np.meshgrid(range(fs4),range(fs3))
     
     XA,YA=Variable(to_cuda(torch.FloatTensor(XA))),Variable(to_cuda(torch.FloatTensor(YA)))
@@ -35,9 +37,11 @@ def corr_to_matches(corr4d, delta4d=None, k_size=1, do_softmax=False, scale='cen
         if do_softmax:
             nc_A_Bvec=torch.nn.functional.softmax(nc_A_Bvec,dim=3)
 
+        # Max and argmax
         match_A_vals,idx_A_Bvec=torch.max(nc_A_Bvec,dim=3)
         score=match_A_vals.view(batch_size,-1)
-
+        
+        # Pick the indices for the best score
         iB=IB.view(-1)[idx_A_Bvec.view(-1)].view(batch_size,-1)
         jB=JB.view(-1)[idx_A_Bvec.view(-1)].view(batch_size,-1)
         iA=IA.expand_as(iB)
@@ -56,14 +60,17 @@ def corr_to_matches(corr4d, delta4d=None, k_size=1, do_softmax=False, scale='cen
         iB=IB.expand_as(iA)
         jB=JB.expand_as(jA)
 
-    if delta4d is not None: # relocalization
+    if delta4d is not None: # relocalization, it is also the case k_size > 1
+        # The shift within the pooling window reference to (0,0,0,0)
         delta_iA,delta_jA,delta_iB,delta_jB = delta4d
-
-        diA=delta_iA.squeeze(0).squeeze(0)[iA.view(-1),jA.view(-1),iB.view(-1),jB.view(-1)]
+        
+        # Reorder the indices according 
+        diA=delta_iA.squeeze(0).squeeze(0)[iA.view(-1),jA.view(-1),iB.view(-1),jB.view(-1)] 
         djA=delta_jA.squeeze(0).squeeze(0)[iA.view(-1),jA.view(-1),iB.view(-1),jB.view(-1)]        
         diB=delta_iB.squeeze(0).squeeze(0)[iA.view(-1),jA.view(-1),iB.view(-1),jB.view(-1)]
         djB=delta_jB.squeeze(0).squeeze(0)[iA.view(-1),jA.view(-1),iB.view(-1),jB.view(-1)]
-
+        
+        # *k_size place the pixel to the 1st location in upsampled 4D-Volumn
         iA=iA*k_size+diA.expand_as(iA)
         jA=jA*k_size+djA.expand_as(jA)
         iB=iB*k_size+diB.expand_as(iB)
