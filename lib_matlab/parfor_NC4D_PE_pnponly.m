@@ -1,4 +1,4 @@
-function parfor_NC4D_PE_pnponly( qname, dbname, params, matches, imsize_q, imsize_db)
+function parfor_NC4D_PE_pnponly( qname, dbname, params, matches)
 
 [~, dbbasename, ~] = fileparts(dbname);
 this_nc4dpe_matname = fullfile(params.output.pnp_nc4d_inlier.dir, qname, [dbbasename, params.output.pnp_nc4d.matformat]);

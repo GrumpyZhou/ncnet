@@ -2,15 +2,15 @@
 
 % adjust path and experiment name
 inloc_demo_path = 'InLoc_demo';
-experiment = 'densePE_top100_shortlist_cvpr18_SZ_NEW_3200_K_2_BOTHDIRS_SOFTMAX_CHECKPOINT_ncnet_ivd';
+experiment = 'ncnet_ivd';
 
 if exist('ncnet_path')==0
 	ncnet_path=pwd;
 end
-matches_path = fullfile(ncnet_path,'matches');
+matches_path = fullfile(ncnet_path, 'matches');
 
 sorted_list_fn = 'densePE_top100_shortlist_cvpr18.mat';
-sorted_list = load(fullfile(ncnet_path,'datasets/inloc/',sorted_list_fn));
+sorted_list = load(fullfile(ncnet_path,'datasets/inloc/', sorted_list_fn));
 
 addpath(fullfile(ncnet_path,'lib_matlab'));
 
