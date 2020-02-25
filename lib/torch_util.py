@@ -45,21 +45,17 @@ def Softmax1D(x,dim):
     exp_x = torch.exp(x)
     return torch.div(exp_x,torch.sum(exp_x,dim).unsqueeze(dim).expand_as(x))
     
-def save_checkpoint(state, is_best, file, save_all_epochs=False):
+def save_checkpoint(state, is_best, file, save_step=5):
     model_dir = dirname(file)
     model_fn = basename(file)
     # make dir if needed (should be non-empty)
     if model_dir!='' and not exists(model_dir):
         makedirs(model_dir)
-    if save_all_epochs:
-        torch.save(state, join(model_dir,str(state['epoch'])+'_' + model_fn))
-        if is_best:
-            shutil.copyfile(join(model_dir,str(state['epoch'])+'_' + model_fn), join(model_dir,'best_' + model_fn))
-    else:
-        torch.save(state, file)
-        if is_best:
-            shutil.copyfile(file, join(model_dir,'best_' + model_fn))
-
+    if state['epoch'] % save_step == 0:
+        torch.save(state, join(model_dir, str(state['epoch'])+'_' + model_fn))
+        
+    if is_best:
+        torch.save(state, join(model_dir, 'best_' + model_fn))
         
 def str_to_bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
